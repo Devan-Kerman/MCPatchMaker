@@ -17,8 +17,8 @@ public class PatchMC {
 		System.out.println("Decompiler: https://github.com/hube12/DecompilerMC (Neil#4879)");
 		System.out.println("Patch generator: http://gnuwin32.sourceforge.net/packages/diffutils.htm");
 
-		if (args.length < 3) {
-			args = new String[3];
+		if (args.length < 4) {
+			args = new String[4];
 			Scanner scanner = new Scanner(System.in);
 			System.out.print("Enter the initial version: ");
 			args[0] = scanner.nextLine();
@@ -28,9 +28,18 @@ public class PatchMC {
 
 			System.out.print("Enter the output patch file: ");
 			args[2] = scanner.nextLine();
+
+			System.out.println("Client or Server: ");
+			args[3] = scanner.nextLine();
 		}
 
-		System.out.printf("Generating %s from version %s to %s...\n", args[2], args[0], args[1]);
+		boolean client = false;
+
+		if (args[3].equalsIgnoreCase("y")) {
+			client = true;
+		}
+
+		System.out.printf("Generating a %s from version %s to %s...\n", args[2], args[0], args[1]);
 
 		System.out.println("Unpacking decompiler...");
 		unloadResource("decomp1", "decompile/MCDecompiler.exe", "decompile/lib/cfr-0.146.jar", "decompile/lib/fernflower.jar", "decompile/lib/SpecialSource-1.8.6.jar");
@@ -39,8 +48,8 @@ public class PatchMC {
 
 		System.out.println("Decompiling...");
 		Runtime runtime = Runtime.getRuntime();
-		Process init = decompile(runtime, args[0], new File("decomp1/decompile/MCDecompiler.exe"));
-		Process targ = decompile(runtime, args[1], new File("decomp2/decompile/MCDecompiler.exe"));
+		Process init = decompile(runtime, args[0], new File("decomp1/decompile/MCDecompiler.exe"), client);
+		Process targ = decompile(runtime, args[1], new File("decomp2/decompile/MCDecompiler.exe"), client);
 
 		System.out.println("This may take several minutes...");
 		long start = System.currentTimeMillis();
@@ -88,13 +97,17 @@ public class PatchMC {
 		return new ProcessBuilder().command(new File("temp/diff/diff.exe").getAbsolutePath(), "-Nur", "\"" + new File("decomp1/decompile/src/" + ver1).getAbsolutePath() + "\"", "\"" + new File("decomp2/decompile/src/" + ver2).getAbsolutePath() + "\"").redirectOutput(output);
 	}
 
-	public static Process decompile(Runtime runtime, String version, File decompiler) throws IOException {
+	public static Process decompile(Runtime runtime, String version, File decompiler, boolean client) throws IOException {
 		Process process = runtime.exec(decompiler + "", null, decompiler.getParentFile());
 		PrintWriter stream = new PrintWriter(process.getOutputStream(), true);
 		stream.println();
 		stream.println();
 		stream.println(version);
-		stream.println("s");
+		if (client) {
+			stream.println("c");
+		} else {
+			stream.println("s");
+		}
 		stream.println("y");
 		stream.println();
 		return process;
